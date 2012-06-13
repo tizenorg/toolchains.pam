@@ -11,6 +11,9 @@ Group: System/Base
 Summary: PAM
 URL: http://www.linux-pam.org/
 Source0: %{name}-%{version}.tar.bz2
+Source1: packaging/system-auth
+Source2: packaging/other
+Source1001: packaging/%{name}.manifest
 
 Requires(post): /sbin/ldconfig
 Requires(post): /usr/bin/install
@@ -60,6 +63,7 @@ libtoolize -f #--copy --force && aclocal && autoheader
 autoreconf
 
 %build
+cp %{SOURCE1001} .
 CFLAGS="-fPIC $RPM_OPT_FLAGS " ; export CFLAGS
 
 %configure \
@@ -86,6 +90,11 @@ for phase in auth acct passwd session ; do
 	ln -sf pam_unix.so $RPM_BUILD_ROOT%{_moduledir}/pam_unix_${phase}.so 
 done
 
+# Install default pam configuration files
+install -d -m 0755 %{buildroot}%{_pamconfdir}
+install -m 0644 %{SOURCE1} %{buildroot}%{_pamconfdir}/
+install -m 0644 %{SOURCE2} %{buildroot}%{_pamconfdir}/
+
 %post
 /sbin/ldconfig
 if [ ! -a /var/log/faillog ] ; then
@@ -100,6 +109,7 @@ fi
 
 %files 
 %defattr(-,root,root,-)
+%manifest pam.manifest
 %doc Copyright
 %{_sbindir}/pam_tally
 %{_sbindir}/pam_tally2
@@ -112,7 +122,10 @@ fi
 %{_libdir}/libpam_misc.so.*
 %{_libdir}/libpamc.so.*
 %dir %{_moduledir}
+%{_moduledir}/pam_deny.so
+%{_moduledir}/pam_env.so
 %{_moduledir}/pam_keyinit.so
+%{_moduledir}/pam_limits.so
 %{_moduledir}/pam_loginuid.so
 %{_moduledir}/pam_namespace.so
 %{_moduledir}/pam_nologin.so
@@ -120,6 +133,7 @@ fi
 %{_moduledir}/pam_rootok.so
 %{_moduledir}/pam_securetty.so
 %{_moduledir}/pam_succeed_if.so
+%{_moduledir}/pam_unix.so
 %{_moduledir}/pam_wheel.so
 %{_moduledir}/pam_xauth.so
 %{_moduledir}/pam_filter
@@ -132,13 +146,16 @@ fi
 %config(noreplace) %{_secconfdir}/pam_env.conf
 %config(noreplace) %{_secconfdir}/time.conf
 %exclude /var/run/sepermit
+%dir %{_pamconfdir}
+%{_pamconfdir}/system-auth
+%{_pamconfdir}/other
 
 %files -n pam-modules-extra
+%defattr(-,root,root,-)
+%manifest pam.manifest
 %{_moduledir}/pam_access.so
 %{_moduledir}/pam_debug.so
-%{_moduledir}/pam_deny.so
 %{_moduledir}/pam_echo.so
-%{_moduledir}/pam_env.so
 %{_moduledir}/pam_exec.so
 %{_moduledir}/pam_faildelay.so
 %{_moduledir}/pam_filter.so
@@ -146,7 +163,6 @@ fi
 %{_moduledir}/pam_group.so
 %{_moduledir}/pam_issue.so
 %{_moduledir}/pam_lastlog.so
-%{_moduledir}/pam_limits.so
 %{_moduledir}/pam_listfile.so
 %{_moduledir}/pam_localuser.so
 %{_moduledir}/pam_mail.so
@@ -160,7 +176,6 @@ fi
 %{_moduledir}/pam_time.so
 %{_moduledir}/pam_timestamp.so
 %{_moduledir}/pam_umask.so
-%{_moduledir}/pam_unix.so
 %{_moduledir}/pam_unix_acct.so
 %{_moduledir}/pam_unix_auth.so
 %{_moduledir}/pam_unix_passwd.so
@@ -169,6 +184,7 @@ fi
 
 %files devel
 %defattr(-,root,root)
+%manifest pam.manifest
 %{_includedir}/security/*
 %doc %{_mandir}/man3/*
 %doc %{_mandir}/man5/*
