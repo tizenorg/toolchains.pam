@@ -105,6 +105,10 @@ do
 	done;
 done
 
+# license
+mkdir -p %{buildroot}/usr/share/license
+cp COPYING %{buildroot}/usr/share/license/%{name}
+
 %post
 /sbin/ldconfig
 if [ ! -a /var/log/faillog ] ; then
@@ -160,6 +164,7 @@ fi
 %dir %{_pamconfdir}
 %{_pamconfdir}/system-auth
 %{_pamconfdir}/other
+/usr/share/license/%{name}
 
 %files -n pam-modules-extra
 %defattr(-,root,root,-)
