@@ -1,0 +1,9 @@
+<manifest>
+  <request>
+    <domain name="_"/>
+  </request>
+  <assign>
+    <filesystem path="/etc/security/namespace.init" label="_" exec_label="none" />
+    <filesystem path="/sbin/*" label="_" exec_label="none" />
+  </assign>
+</manifest>
