@@ -30,6 +30,7 @@ PAM (Pluggable Authentication Modules) is a system security tool that
 allows system administrators to set authentication policy without
 having to recompile programs that handle authentication.
 
+
 %package -n pam-modules-extra
 Group: System/Base
 Summary: Extra modules provided by PAM not used in the base system
@@ -70,12 +71,12 @@ CFLAGS="-fPIC $RPM_OPT_FLAGS " ; export CFLAGS
 	--includedir=%{_includedir}/security \
 	--enable-isadir=../..%{_moduledir} \
 	--disable-audit \
-    --disable-nls \
+	--disable-nls \
 	--with-db-uniquename=_pam \
-    --with-libiconv-prefix=/usr \
-    --enable-read-both-confs &&
+	--with-libiconv-prefix=/usr \
+	--enable-read-both-confs &&
 
-make %{?_smp_flags} CFLAGS="$CFLAGS -lfl -lcrypt"
+make %{?_smp_mflags} CFLAGS="$CFLAGS -lfl -lcrypt"
 
 %install
 %make_install
