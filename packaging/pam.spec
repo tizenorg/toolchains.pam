@@ -3,37 +3,38 @@
 %define _secconfdir %{_sysconfdir}/security
 %define _pamconfdir %{_sysconfdir}/pam.d
 
-Name:           pam
-Version:        1.1.5
-Release:        1
-License:        BSD and GPLv2+ and BSD with advertising
-Summary:        PAM
-Url:            http://www.linux-pam.org/
-Group:          System/Base
-Source0:        %{name}-%{version}.tar.bz2
-Source1:        system-auth
-Source2:        other
-Source1001:     %{name}.manifest
+Name: pam
+Version: 1.1.5
+Release: 2
+License: BSD and GPLv2+ and BSD with advertising
+Group: System/Base
+Summary: PAM
+URL: http://www.linux-pam.org/
+Source0: %{name}-%{version}.tar.bz2
+Source1: packaging/system-auth
+Source2: packaging/other
+Source1001: packaging/%{name}.manifest
 
-BuildRequires:  bison
-BuildRequires:  db4-devel
-BuildRequires:  flex
-BuildRequires:  gcc
-BuildRequires:  net-tools
-BuildRequires:  zlib-devel
 Requires(post): /sbin/ldconfig
 Requires(post): /usr/bin/install
 Requires(postun): /sbin/ldconfig
+BuildRequires: db4-devel
+BuildRequires: bison
+BuildRequires: flex
+BuildRequires: gcc
+BuildRequires: zlib-devel
+BuildRequires: net-tools
 
 %description
 PAM (Pluggable Authentication Modules) is a system security tool that
 allows system administrators to set authentication policy without
 having to recompile programs that handle authentication.
 
+
 %package -n pam-modules-extra
-Summary:        Extra modules provided by PAM not used in the base system
-Group:          System/Base
-Requires:       pam = %{version}
+Group: System/Base
+Summary: Extra modules provided by PAM not used in the base system
+Requires: pam = %{version}-%{release}
 
 %description -n pam-modules-extra
 PAM (Pluggable Authentication Modules) is a system security tool that
@@ -42,10 +43,11 @@ having to recompile programs that handle authentication. This package
 contains extra modules for use by programs that are not used in the
 default Tizen install.
 
+
 %package devel
-Summary:        Files needed for developing PAM-aware applications and modules for PAM
-Group:          Development/Libraries
-Requires:       pam = %{version}
+Group: Development/Libraries
+Summary: Files needed for developing PAM-aware applications and modules for PAM
+Requires: pam = %{version}-%{release}
 
 %description devel
 PAM (Pluggable Authentication Modules) is a system security tool that
@@ -55,43 +57,53 @@ contains header files and static libraries used for building both
 PAM-aware applications and modules for use with PAM.
 
 %prep
-%setup -q
+%setup
 
 libtoolize -f #--copy --force && aclocal && autoheader
 autoreconf
 
 %build
 cp %{SOURCE1001} .
-CFLAGS="-fPIC %{optflags} " ; export CFLAGS
+CFLAGS="-fPIC $RPM_OPT_FLAGS " ; export CFLAGS
 
 %configure \
-        --libdir=%{_libdir} \
-        --includedir=%{_includedir}/security \
-        --enable-isadir=../..%{_moduledir} \
-        --disable-audit \
-        --disable-nls \
-        --with-db-uniquename=_pam \
-        --with-libiconv-prefix=/usr \
-        --enable-read-both-confs &&
+	--libdir=%{_libdir} \
+	--includedir=%{_includedir}/security \
+	--enable-isadir=../..%{_moduledir} \
+	--disable-audit \
+	--disable-nls \
+	--with-db-uniquename=_pam \
+	--with-libiconv-prefix=/usr \
+	--enable-read-both-confs &&
 
-make %{?_smp_flags} CFLAGS="$CFLAGS -lfl -lcrypt"
+make %{?_smp_mflags} CFLAGS="$CFLAGS -lfl -lcrypt"
 
 %install
 %make_install
 
 # RPM uses docs from source tree
-rm -rf %{buildroot}%{_datadir}/doc/Linux-PAM
+rm -rf $RPM_BUILD_ROOT%{_datadir}/doc/Linux-PAM
 # Included in setup package
-rm -f %{buildroot}%{_sysconfdir}/environment
+rm -f $RPM_BUILD_ROOT%{_sysconfdir}/environment
 
 for phase in auth acct passwd session ; do
-	ln -sf pam_unix.so %{buildroot}%{_moduledir}/pam_unix_${phase}.so
+	ln -sf pam_unix.so $RPM_BUILD_ROOT%{_moduledir}/pam_unix_${phase}.so
 done
 
 # Install default pam configuration files
 install -d -m 0755 %{buildroot}%{_pamconfdir}
 install -m 0644 %{SOURCE1} %{buildroot}%{_pamconfdir}/
 install -m 0644 %{SOURCE2} %{buildroot}%{_pamconfdir}/
+
+mkdir -p $RPM_BUILD_ROOT%{_datadir}/license
+for keyword in LICENSE COPYING COPYRIGHT;
+do
+	for file in `find %{_builddir} -name $keyword`;
+	do
+		cat $file >> $RPM_BUILD_ROOT%{_datadir}/license/%{name};
+		echo "";
+	done;
+done
 
 %post
 /sbin/ldconfig
@@ -106,15 +118,17 @@ fi
 
 
 %files
+%defattr(-,root,root,-)
 %manifest pam.manifest
 %doc Copyright
+%{_datadir}/license/%{name}
 %{_sbindir}/pam_tally
 %{_sbindir}/pam_tally2
-%attr(4755,root,root) %{_sbindir}/pam_timestamp_check
-%attr(4755,root,root) %{_sbindir}/unix_chkpwd
-%attr(0700,root,root) %{_sbindir}/unix_update
-%attr(0755,root,root) %{_sbindir}/mkhomedir_helper
-%{_sysconfdir}/security/limits.conf
+%exclude %attr(4755,root,root) %{_sbindir}/pam_timestamp_check
+%exclude %attr(4755,root,root) %{_sbindir}/unix_chkpwd
+%exclude %attr(0700,root,root) %{_sbindir}/unix_update
+%exclude %attr(0755,root,root) %{_sbindir}/mkhomedir_helper
+/etc/security/limits.conf
 %{_libdir}/libpam.so.*
 %{_libdir}/libpam_misc.so.*
 %{_libdir}/libpamc.so.*
@@ -142,13 +156,15 @@ fi
 %attr(755,root,root) %config(noreplace) %{_secconfdir}/namespace.init
 %config(noreplace) %{_secconfdir}/pam_env.conf
 %config(noreplace) %{_secconfdir}/time.conf
-%exclude %{_localstatedir}/run/sepermit
+%exclude /var/run/sepermit
 %dir %{_pamconfdir}
 %{_pamconfdir}/system-auth
 %{_pamconfdir}/other
 
 %files -n pam-modules-extra
+%defattr(-,root,root,-)
 %manifest pam.manifest
+%{_datadir}/license/%{name}
 %{_moduledir}/pam_access.so
 %{_moduledir}/pam_debug.so
 %{_moduledir}/pam_echo.so
@@ -179,7 +195,9 @@ fi
 %{_moduledir}/pam_warn.so
 
 %files devel
+%defattr(-,root,root)
 %manifest pam.manifest
+%{_datadir}/license/%{name}
 %{_includedir}/security/*
 %doc %{_mandir}/man3/*
 %doc %{_mandir}/man5/*
@@ -188,4 +206,5 @@ fi
 %{_libdir}/libpam_misc.so
 %{_libdir}/libpamc.so
 %{_libdir}/security/pam_tally2.so
+
 
