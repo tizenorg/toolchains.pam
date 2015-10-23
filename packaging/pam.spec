@@ -5,8 +5,8 @@
 
 Name: pam
 Version: 1.1.5
-Release: 2
-License: BSD and GPLv2+ and BSD with advertising
+Release: 4
+License: BSD-2.0 and GPLv2+ and BSD with advertising
 Group: System/Base
 Summary: PAM
 URL: http://www.linux-pam.org/
@@ -64,19 +64,19 @@ autoreconf
 
 %build
 cp %{SOURCE1001} .
-CFLAGS="-fPIC $RPM_OPT_FLAGS " ; export CFLAGS
+CFLAGS="-fPIC $RPM_OPT_FLAGS -fPIE " ; export CFLAGS
 
 %configure \
 	--libdir=%{_libdir} \
 	--includedir=%{_includedir}/security \
 	--enable-isadir=../..%{_moduledir} \
 	--disable-audit \
-	--disable-nls \
+    --disable-nls \
 	--with-db-uniquename=_pam \
-	--with-libiconv-prefix=/usr \
-	--enable-read-both-confs &&
+    --with-libiconv-prefix=/usr \
+    --enable-read-both-confs &&
 
-make %{?_smp_mflags} CFLAGS="$CFLAGS -lfl -lcrypt"
+make %{?_smp_flags} CFLAGS="$CFLAGS -lfl -lcrypt -pie"
 
 %install
 %make_install
@@ -96,14 +96,7 @@ install -m 0644 %{SOURCE1} %{buildroot}%{_pamconfdir}/
 install -m 0644 %{SOURCE2} %{buildroot}%{_pamconfdir}/
 
 mkdir -p $RPM_BUILD_ROOT%{_datadir}/license
-for keyword in LICENSE COPYING COPYRIGHT;
-do
-	for file in `find %{_builddir} -name $keyword`;
-	do
-		cat $file >> $RPM_BUILD_ROOT%{_datadir}/license/%{name};
-		echo "";
-	done;
-done
+cat License.GPL-v2.0+ > $RPM_BUILD_ROOT%{_datadir}/license/%{name}
 
 %post
 /sbin/ldconfig
